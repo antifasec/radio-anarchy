@@ -19,7 +19,7 @@ npm install
 
 ### gsm-dump
 
-Inspired by [gr-gsm](https://github.com/ptrkrysik/gr-gsm)
+- Inspired by [gr-gsm](https://github.com/ptrkrysik/gr-gsm)
 
 ### Usage
 
@@ -40,8 +40,8 @@ Not yet implemented
 
 ### gps-spoof
 
-Inspired by [GPSpoof](https://github.com/last-byte/GPSpoof)
-Inspired by [gps-srd-sim](https://github.com/osqzss/gps-sdr-sim)
+- Inspired by [GPSpoof](https://github.com/last-byte/GPSpoof)
+- Inspired by [gps-srd-sim](https://github.com/osqzss/gps-sdr-sim)
 
 #### Usage
 
