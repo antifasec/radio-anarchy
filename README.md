@@ -2,8 +2,6 @@
 
 Radio software for community defense
 
-Inspired by [GPSpoof](https://github.com/last-byte/GPSpoof)
-
 ## Dependencies
 
 - node
@@ -19,9 +17,33 @@ cd radio-anarchy
 npm install
 ```
 
+### gsm-dump
+
+Inspired by [gr-gsm](https://github.com/ptrkrysik/gr-gsm)
+
+### Usage
+
+```
+> $ ./bin/gsm_dump
+               __  _ ____                    
+  ____ _____  / /_(_) __/___ _________  _____
+ / __ `/ __ \/ __/ / /_/ __ `/ ___/ _ \/ ___/
+/ /_/ / / / / /_/ / __/ /_/ (__  )  __/ /__
+\__,_/_/ /_/\__/_/_/  \__,_/____/\___/\___/ 
+
+radio-anarchy 0.0.0
+
+> Radio software for community defense 
+
+Not yet implemented
+```
+
 ### gps-spoof
 
-#### Command-line arguments
+Inspired by [GPSpoof](https://github.com/last-byte/GPSpoof)
+Inspired by [gps-srd-sim](https://github.com/osqzss/gps-sdr-sim)
+
+#### Usage
 
 ```
 > $ ./bin/gps-spoof --help

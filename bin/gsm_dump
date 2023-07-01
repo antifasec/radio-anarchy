@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+require('../lib/banner')
+
+console.log('Not yet implemented')
