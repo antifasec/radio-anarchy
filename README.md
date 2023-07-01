@@ -18,7 +18,7 @@ npm install
 
 - Inspired by [gr-gsm](https://github.com/ptrkrysik/gr-gsm)
 
-### Usage
+#### Usage
 
 ```
 > $ ./bin/gsm_dump --help
