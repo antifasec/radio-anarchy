@@ -1,0 +1,139 @@
+#!/usr/bin/env node
+
+require('../lib/banner')
+
+const fs = require('fs')
+const path = require('path')
+const hasbin = require('hasbin')
+
+const { mkdirp } = require('mkdirp')
+const { program } = require('commander')
+const { confirm, input, password, select } = require('@inquirer/prompts')
+const { rimraf } = require('rimraf')
+
+const brdcBuildDirectory = path.resolve(__dirname, '..', 'build')
+const gpsSdrSimBinaryFile = path.resolve(__dirname, '..', '.gps-sdr-sim', 'gps-sdr-sim-master', 'gps-sdr-sim')
+
+program
+  .option('--cleanup', 'Remove all build artifacts', false)
+  .option('-c, --compile', 'Download and compile gps-sdr-sim (requires gcc in PATH)', false)
+  .option('-b, --build', 'Build/Rebuild `brdc.bin`', false)
+  .option('--file <file>', 'BRDC file to build')
+  .option('--lat <latitude>', 'Latitude', '37.81992761194152')
+  .option('--lng <longitude>', 'Longitude', '-122.47824792916177')
+  .option('--alt <altitude>', 'Altitude', '0')
+  .option('--runtime <runtime>', 'Runtime', '60')
+  .option('-d, --download', 'Download brdc data from nasa.gov', false)
+  .option('--user <username>', 'urs.earthdata.nasa.gov username')
+  .option('--pass <password>', 'urs.earthdata.nasa.gov password')
+  .option('-t, --transmit <file>', 'Transmit file via hackrf (requires `hackrf_transfer` in PATH)')
+  .option('--freq <frequency>', 'Transmit frequency', '1575420000')
+  .option('--samplerate <sampleRate>', 'Transmit sample rate', '2600000')
+  .option('--txgain <txGain>', 'TX VGA (IF) gain, 0-47dB, 1dB steps', '0')
+  .option('--amplify', 'RX/TX RF amplifier', true)
+  .option('--nowait', 'Don\'t wait to start transmitting', false)
+
+const binTest = /\.bin$/
+const brdcTest = /\.\d\d[gn]$/
+
+;(async () => {
+  program.parse()
+  const cmdArgs = program.opts()
+
+  if (cmdArgs.cleanup) {
+    console.info('Cleaning up...')
+    await rimraf(brdcBuildDirectory)
+    await rimraf(path.dirname(path.dirname(gpsSdrSimBinaryFile)))
+  }
+
+  // gps-sdr-sim compilation
+  await (async() => {
+    try {
+      fs.statSync(gpsSdrSimBinaryFile)
+      fs.accessSync(gpsSdrSimBinaryFile, fs.constants.X_OK)
+    } catch (e) {
+      console.info('gps-sdr-sim not found')
+
+      if (cmdArgs.compile || await confirm({ message: 'Download & compile gps-sdr-sim', default: true })) {
+        if (!hasbin.sync('gcc')) {
+          console.error('gcc not found in PATH')
+          process.exit(1)
+        }
+
+        await require('../lib/compile_gps-sdr-sim')(gpsSdrSimBinaryFile)
+      }
+    }
+  })()
+
+  const brdcBinariesFound = (() => {
+    try { return Boolean(fs.readdirSync(brdcBuildDirectory).find(filename => (binTest.test(filename)))) }
+    catch (e) { console.warn(e.message) }
+    return false
+  })()
+
+  if (cmdArgs.build || await confirm({ message: 'Build/Rebuild BRDC.bin', default: !brdcBinariesFound })) {
+    await mkdirp(brdcBuildDirectory)
+
+    const brdcDatafilesFound = (() => {
+      try { return Boolean(fs.readdirSync(brdcBuildDirectory).find(filename => (brdcTest.test(filename)))) }
+      catch (e) { console.warn(e.message) }
+      return false
+    })()
+
+    if (cmdArgs.download || await confirm({ message: 'Download new BRDC data', default: !brdcDatafilesFound })) {
+      await require('../lib/download_brdc')(
+        brdcBuildDirectory,
+        cmdArgs.user || await password({ message: 'urs.earthdata.nasa.gov username'  }),
+        cmdArgs.pass || await password({ message: 'urs.earthdata.nasa.gov password'  })
+      )
+    }
+
+    await require('../lib/compile_gpssim_bin')(
+      gpsSdrSimBinaryFile,
+      (cmdArgs.file || await select({
+        message: 'BRDC file',
+        choices: fs.readdirSync(brdcBuildDirectory).reduce((memo, filename) => {
+          if (!brdcTest.test(filename)) return memo
+          return [ ...memo, {
+            name: filename,
+            value: path.resolve(brdcBuildDirectory, filename)
+          } ]
+        }, [])
+      })),
+      await input({ message: 'Latitude', default: cmdArgs.lat }),
+      await input({ message: 'Longitude', default: cmdArgs.lng }),
+      await input({ message: 'Altitude', default: cmdArgs.alt }),
+      await input({ message: 'Runtime', default: cmdArgs.runtime })
+    )
+  }
+
+  if (hasbin.sync('hackrf_transfer')) {
+    if (await confirm({ message: 'Transmit via hackrf', default: false })) {
+      const transfer = (cmdArgs.transfer || await select({
+        message: 'Select BRDC.bin file',
+        choices: fs.readdirSync(brdcBuildDirectory).reduce((memo, filename) => {
+          if (!/\.bin$/.test(filename)) return memo
+          return [ ...memo, {
+            name: filename,
+            value: path.resolve(brdcBuildDirectory, filename)
+          } ]
+        }, [])
+      }))
+      const frequency = await input({ message: 'Frequency', default: cmdArgs.freq })
+      const samplerate = await input({ message: 'Sample Rate', default: cmdArgs.samplerate })
+      const txgain = await input({ message: 'Transmit Gain', default: cmdArgs.txgain })
+      const amplify = await select({
+        message: 'Enable amplification',
+        default: cmdArgs.amplify === true ? '1' : '0',
+        choices: [
+          { name: 'Enabled', value: '1' },
+          { name: 'Disabled', value: '0' }
+        ]
+      })
+
+      await confirm({ message: 'You are about to transmit a GPS signal. Are you sure you want to do this?', default: false })
+      await require('../lib/hackrf_transfer')(transfer, frequency, samplerate, txgain, amplify, cmdArgs.nowait)
+    }
+  }
+
+})()

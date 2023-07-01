@@ -1,0 +1,24 @@
+{
+  "name": "radio-anarchy",
+  "version": "0.0.0",
+  "description": "Radio software for community defense",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^2.2.0",
+    "axios": "^1.4.0",
+    "commander": "^11.0.0",
+    "decompress": "^4.2.1",
+    "execa": "^7.1.1",
+    "hasbin": "^1.2.3",
+    "lodash": "^4.17.21",
+    "mkdirp": "^3.0.1",
+    "moment": "^2.29.4",
+    "puppeteer": "^20.7.4",
+    "rimraf": "^5.0.1"
+  }
+}
