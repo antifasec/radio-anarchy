@@ -5,9 +5,6 @@ Radio software for community defense
 ## Dependencies
 
 - node
-- gcc
-- gzip
-- hackrf_transfer
 
 ## Setup
 
@@ -24,7 +21,7 @@ npm install
 ### Usage
 
 ```
-> $ ./bin/gsm_dump
+> $ ./bin/gsm_dump --help
                __  _ ____                    
   ____ _____  / /_(_) __/___ _________  _____
  / __ `/ __ \/ __/ / /_/ __ `/ ___/ _ \/ ___/
@@ -42,6 +39,12 @@ Not yet implemented
 
 - Inspired by [GPSpoof](https://github.com/last-byte/GPSpoof)
 - Inspired by [gps-srd-sim](https://github.com/osqzss/gps-sdr-sim)
+
+#### Dependencies
+
+- gcc
+- gzip
+- hackrf_transfer
 
 #### Usage
 
