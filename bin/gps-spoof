@@ -7,9 +7,11 @@ const path = require('path')
 const hasbin = require('hasbin')
 
 const { mkdirp } = require('mkdirp')
+const { rimraf } = require('rimraf')
 const { program } = require('commander')
 const { confirm, input, password, select } = require('@inquirer/prompts')
-const { rimraf } = require('rimraf')
+
+const { brdcBinMatcher, brdcFileMatcher } = require('../lib/gps-spoof/constants')
 
 const brdcBuildDirectory = path.resolve(__dirname, '..', 'build')
 const gpsSdrSimBinaryFile = path.resolve(__dirname, '..', '.gps-sdr-sim', 'gps-sdr-sim-master', 'gps-sdr-sim')
@@ -32,9 +34,6 @@ program
   .option('--txgain <txGain>', 'TX VGA (IF) gain, 0-47dB, 1dB steps', '0')
   .option('--amplify', 'RX/TX RF amplifier', true)
   .option('--nowait', 'Don\'t wait to start transmitting', false)
-
-const binTest = /\.bin$/
-const brdcTest = /\.\d\d[gn]$/
 
 ;(async () => {
   program.parse()
@@ -66,7 +65,7 @@ const brdcTest = /\.\d\d[gn]$/
   })()
 
   const brdcBinariesFound = (() => {
-    try { return Boolean(fs.readdirSync(brdcBuildDirectory).find(filename => (binTest.test(filename)))) }
+    try { return Boolean(fs.readdirSync(brdcBuildDirectory).find(filename => (brdcBinMatcher.test(filename)))) }
     catch (e) { console.warn(e.message) }
     return false
   })()
@@ -75,7 +74,7 @@ const brdcTest = /\.\d\d[gn]$/
     await mkdirp(brdcBuildDirectory)
 
     const brdcDatafilesFound = (() => {
-      try { return Boolean(fs.readdirSync(brdcBuildDirectory).find(filename => (brdcTest.test(filename)))) }
+      try { return Boolean(fs.readdirSync(brdcBuildDirectory).find(filename => (brdcFileMatcher.test(filename)))) }
       catch (e) { console.warn(e.message) }
       return false
     })()
@@ -93,7 +92,7 @@ const brdcTest = /\.\d\d[gn]$/
       (cmdArgs.file || await select({
         message: 'BRDC file',
         choices: fs.readdirSync(brdcBuildDirectory).reduce((memo, filename) => {
-          if (!brdcTest.test(filename)) return memo
+          if (!brdcFileMatcher.test(filename)) return memo
           return [ ...memo, {
             name: filename,
             value: path.resolve(brdcBuildDirectory, filename)
