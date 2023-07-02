@@ -60,7 +60,7 @@ const brdcTest = /\.\d\d[gn]$/
           process.exit(1)
         }
 
-        await require('../lib/compile_gps-sdr-sim')(gpsSdrSimBinaryFile)
+        await require('../lib/gps-spoof/compile_gps-sdr-sim')(gpsSdrSimBinaryFile)
       }
     }
   })()
@@ -81,14 +81,14 @@ const brdcTest = /\.\d\d[gn]$/
     })()
 
     if (cmdArgs.download || await confirm({ message: 'Download new BRDC data', default: !brdcDatafilesFound })) {
-      await require('../lib/download_brdc')(
+      await require('../lib/gps-spoof/download_brdc')(
         brdcBuildDirectory,
         cmdArgs.user || await password({ message: 'urs.earthdata.nasa.gov username'  }),
         cmdArgs.pass || await password({ message: 'urs.earthdata.nasa.gov password'  })
       )
     }
 
-    await require('../lib/compile_gpssim_bin')(
+    await require('../lib/gps-spoof/compile_gpssim_bin')(
       gpsSdrSimBinaryFile,
       (cmdArgs.file || await select({
         message: 'BRDC file',
