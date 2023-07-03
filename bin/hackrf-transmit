@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+
+require('../lib/banner')
+
+const fs = require('fs')
+const path = require('path')
+const hasbin = require('hasbin')
+
+const { program } = require('commander')
+const { input, select } = require('@inquirer/prompts')
+
+const resolveFiles = require('../lib/resolveFiles')
+const { PAYLOADS_DIRECTORY, BIN_MATCHER } = require('../lib/constants')
+
+program
+  .option('--hrftx-payload <file or path>', 'Payload to transmit', PAYLOADS_DIRECTORY)
+  .option('--hrftx-frequency <frequency>', 'Transmit frequency')
+  .option('--hrftx-samplerate <sample rate>', 'Transmit sample rate')
+  .option('--hrftx-gain <gain>', 'TX VGA (IF) gain, 0-47dB, 1dB steps')
+  .option('--hrftx-amplify', 'Use RX/TX RF amplifier', true)
+  .option('--hrftx-tx-confirm', 'Don\'t ask for confirmation before transmitting', false)
+
+const resolvePayloadFiles = payload => {
+  return resolveFiles(payload).filter(name => BIN_MATCHER.test(name))
+}
+
+module.exports = async (options = {}) => {
+  if (!hasbin.sync('hackrf_transfer')) {
+    return console.error('hackrf_transfer not found in $PATH. Aborting.')
+  }
+
+  const payloadFiles = resolvePayloadFiles(options.hrftxPayload)
+  if (!payloadFiles.length) return console.error('No payloads found. Aborting.')
+  
+  const payload = await (async () => {
+    if (payloadFiles.length === 1) return payloadFiles[0]
+    const payloadChoices = payloadFiles.map(name => ({ name, value: path.resolve(name) }))
+    return await select({ message: 'Select payload', choices: payloadChoices })
+  })()
+
+  const frequency = options.hrftxFrequency
+    || await input({ message: 'Frequency', default: 462562500 })
+
+  const samplerate = options.hrftxSamplerate
+    || await input({ message: 'Sample Rate', default: 2600000 })
+
+  const gain = options.hrftxGain
+    || await input({ message: 'Gain', default: 24 })
+
+  const amplifyInput = options.hrftxAmplify ? '1' : undefined
+  const amplifyChoices = [{ name: 'Enabled', value: '1' }, { name: 'Disabled', value: '0' }]
+  const amplify = amplifyInput || await select({ message: 'Enable amplification', default: '1', choices: amplifyChoices })
+
+  const finalWarningChoices = [
+    { name: `payload    : ${payload}` },
+    { name: `frequency  : ${frequency}` },
+    { name: `samplerate : ${samplerate}` },
+    { name: `gain       : ${gain}` },
+    { name: `amplify    : ${amplify}` },
+    { name: '*** CONFIRM ***', value: true }
+  ]
+  const confirmed = options.hrftxConfirm || await select({
+    message: 'You are about to transmit the following signal. Are you sure you want to do this?',
+    choices: finalWarningChoices
+  })
+  
+  if (!confirmed) {
+    return console.warn('Failed to confirm. Aborting.')
+  }
+
+  console.info('Transmitting signal...')
+  const { execa } = await import('execa')
+  await execa('hackrf_transfer', [
+    '-t', payload,
+    '-f', frequency,
+    '-s', samplerate,
+    '-x', gain,
+    '-a', amplify
+  ]).pipeStdout(process.stdout)
+    .pipeStderr(process.stderr)
+}
+
+if (require.main === module) {
+  program.parse()
+  module.exports(program.opts())
+}

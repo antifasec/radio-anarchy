@@ -2,4 +2,4 @@
 
 require('../lib/banner')
 
-console.log('Not yet implemented')
+console.warn('Not yet implemented')
