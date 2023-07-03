@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-require('../lib/banner')
-
 const fs = require('fs')
 const path = require('path')
 const moment = require('moment')
@@ -80,6 +78,6 @@ module.exports = async (options = {}) => {
 }
 
 if (require.main === module) {
-  program.parse()
-  module.exports(program.opts())
+  require('../lib/banner')
+  module.exports(program.parse().opts())
 }

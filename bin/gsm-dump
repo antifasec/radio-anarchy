@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
-require('../lib/banner')
+const { program } = require('commander')
 
-console.warn('Not yet implemented')
+module.exports = async (options = {}) => {
+  console.warn('Not yet implemented')
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}
