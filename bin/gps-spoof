@@ -9,7 +9,7 @@ const { program } = require('commander')
 const { confirm } = require('@inquirer/prompts')
 
 const hackrfTransmit = require('./hackrf-transmit')
-const buildGpsSignalBinary = require('./build-gps-signal-binary')
+const buildGpsSignalPayload = require('./build-gps-signal-payload')
 
 const resolveFiles = require('../lib/resolveFiles')
 const { PAYLOADS_DIRECTORY } = require('../lib/constants')
@@ -20,7 +20,7 @@ program
 module.exports = async (options = {}) => {
   const payloadFiles = await resolveFiles(options.payload)
   const rebuild = await confirm({ message: 'Build new payload now', default: !payloadFiles.length  })
-  if (rebuild) await buildGpsSignalBinary({ ...options, gpssimOutput: options.payload })
+  if (rebuild) await buildGpsSignalPayload({ ...options, gpssimOutput: options.payload })
 
   await hackrfTransmit({
     ...options,

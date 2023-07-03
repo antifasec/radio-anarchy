@@ -4,6 +4,7 @@ require('../lib/banner')
 
 const fs = require('fs')
 const path = require('path')
+const moment = require('moment')
 
 const compileGpsSdrSim = require('./compile-gps-sdr-sim')
 const downloadUrsEarthdataEphemeris = require('./download-urs-earthdata-ephemeris')
@@ -22,7 +23,7 @@ program
   .option('--gpssim-output <path>', 'Path to output binary signal file', PAYLOADS_DIRECTORY)
   .option('--gpssim-ephemeris <file or path>', 'Path to ephemeris files', BUILD_DIRECTORY)
   .option('--gpssim-iq-bits <bits>', 'IQ bits', 8)
-  .option('--gpssim-duration <duration>', 'Duration to simulate', 60)
+  .option('--gpssim-duration <duration>', 'Duration to simulate')
   .option('--gpssim-latitude <latitude>', 'Latitude to simulate')
   .option('--gpssim-longitude <longitude>', 'Longitude to simulate')
   .option('--gpssim-altitude <altitude>', 'Altitude to simulate')
@@ -65,16 +66,19 @@ module.exports = async (options = {}) => {
   const latitude = options.latitude || await input({ message: 'Latitude to simulate', default: '37.82039916850053' })
   const longitude = options.longitude || await input({ message: 'Longitude to simulate', default: '-122.47826400437096' })
   const altitude = options.altitude || await input({ message: 'Altitude to simulate', default: '100' })
+  const duration = options.gpssimDuration ||  await input({ message: 'Signal duration', default: 600 })
+  const payloadFilename = `${path.basename(ephemeris)}_${latitude}_${longitude}_${altitude}.bin`
 
   console.info(ephemeris, 'compiling...')
   await mkdirp(options.gpssimOutput)
   const { execa } = await import('execa')
   await execa(options.gpssimBinary, [
     '-b', options.gpssimIqBits,
-    '-d', options.gpssimDuration,
+    '-d', duration,
     '-e', ephemeris,
+    '-t', moment.utc().format('YYYY/MM/DD,hh:mm:ss'),
     '-l', `${latitude},${longitude},${altitude}`,
-    '-o', path.resolve(options.gpssimOutput, `${path.basename(ephemeris)}.${Date.now()}.bin`)
+    '-o', path.resolve(options.gpssimOutput, payloadFilename)
   ]).pipeStdout(process.stdout)
     .pipeStderr(process.stderr)
 }
