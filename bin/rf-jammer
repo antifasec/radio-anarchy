@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+
+const hasbin = require('hasbin')
+const { program } = require('commander')
+
+const signals = [
+  'gaussian',
+  'sine',
+  'const',
+  'gaussian',
+  'uniform',
+  '2tone',
+  'sweep',
+  'gsm'
+]
+
+program
+  .option(`--signal <${signals.join('|')}>`, 'Signal to transmit', signals[0])
+  .option('--frequency <frequency>', 'Transmit frequency')
+  .option('--samplerate <sample rate>', 'Transmit sample rate')
+  .option('--gain <gain>', 'TX VGA (IF) gain, 0-47dB, 1dB steps')
+  .option('--amplitude <amplitude>', 'Set output amplitude to AMPL (0.1-1.0) [default=0.3]')
+  .option('--confirm', 'Don\'t ask for confirmation before transmitting', false)
+
+module.exports = async (options = {}) => {
+  if (!hasbin.sync('osmocom_siggen_nogui')) {
+    return console.error('osmocom_siggen_nogui not found on PATH. Aborting.')
+  }
+
+  // const finalWarningChoices = [
+  //   { name: `payload    : ${payload}` },
+  //   { name: `frequency  : ${frequency}` },
+  //   { name: `samplerate : ${samplerate}` },
+  //   { name: `gain       : ${gain}` },
+  //   { name: `amplify    : ${amplify}` },
+  //   { name: '*** CONFIRM ***', value: true }
+  // ]
+
+  // const confirmed = options.hrftxConfirm || await select({
+  //   message: 'You are about to transmit the following signal. Are you sure you want to do this?',
+  //   choices: finalWarningChoices
+  // })
+
+  // if (!confirmed) {
+  //   return console.warn('Failed to confirm. Aborting.')
+  // }
+
+  console.warn('Jamming...')
+  const { execa } = await import('execa')
+  await execa('osmocom_siggen_nogui', [
+    '-a', 'hackrf',
+    '-f', 462562500,
+    '--gaussian',
+    '-v'
+  ]).pipeStdout(process.stdout)
+    .pipeStdout(process.stderr)
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}

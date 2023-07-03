@@ -16,7 +16,7 @@ program
   .option('--hrftx-samplerate <sample rate>', 'Transmit sample rate')
   .option('--hrftx-gain <gain>', 'TX VGA (IF) gain, 0-47dB, 1dB steps')
   .option('--hrftx-amplify', 'Use RX/TX RF amplifier', true)
-  .option('--hrftx-tx-confirm', 'Don\'t ask for confirmation before transmitting', false)
+  .option('--hrftx-confirm', 'Don\'t ask for confirmation before transmitting', false)
 
 const resolvePayloadFiles = payload => {
   return resolveFiles(payload).filter(name => BIN_MATCHER.test(name))

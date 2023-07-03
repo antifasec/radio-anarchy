@@ -1,0 +1,106 @@
+#!/usr/bin/env node
+
+const hasbin = require('hasbin')
+const { program } = require('commander')
+const { select, input } = require('@inquirer/prompts')
+
+const resolveOption = require('../lib/resolveOption')
+
+const signals = [ 'gaussian', 'sine', 'const', 'gaussian', 'uniform', '2tone', 'sweep', 'gsm' ]
+const signalChoices = signals.map(name => ({ name, value: name }))
+
+program
+  .option(`--rfsignal-signal <${signals.join('|')}>`, 'Signal to transmit')
+  .option('--rfsignal-frequency <frequency>', 'Signal frequency')
+  .option('--rfsignal-waveform1-frequency <frequency>', 'Signal waveform frequency', '2e6')
+  .option('--rfsignal-waveform2-frequency <frequency>', 'Signal waveform2 frequency', '10')
+  .option('--rfsignal-samplerate <sample rate>', 'Signal sample rate')
+  .option('--rfsignal-gain <gain>', 'Set gain in dB (default is midpoint)')
+  .option('--rfsignal-amplitude <amplitude>', 'Set output amplitude to AMPL (0.1-1.0) [default=0.3]')
+  .option('--rfsignal-confirm', 'Don\'t ask for confirmation before transmitting', false)
+
+module.exports = async (options = {}) => {
+  if (!hasbin.sync('osmocom_siggen_nogui')) {
+    return console.error('osmocom_siggen_nogui not found on PATH. Aborting.')
+  }
+
+  const frequency = options.rfsignalFrequency || await input({
+    message: resolveOption('--rfsignal-frequency').description,
+    default: 462562500 // FRS
+  })
+  
+  const samplerate = options.rfsignalSamplerate || await input({
+    message: resolveOption('--rfsignal-samplerate').description,
+    default: 2600000
+  })
+
+  const gain = options.rfsignalGain || await input({
+    message: resolveOption('--rfsignal-gain').description
+  })
+
+  const amplitude = options.rfsignalGain || await input({
+    message: resolveOption('--rfsignal-amplitude').description
+  })
+
+  const signal = options.rfsignalSignal || await select({
+    message: resolveOption('--rfsignal-signal').description,
+    choices: signalChoices,
+    default: signals[0]
+  })
+
+  if (!signals.includes(signal)) return console.error('Unrecognized signal. Aborting.')
+
+  const confirmed = options.rfsignalConfirm || await select({
+    message: 'You are about to transmit the following signal. Are you sure you want to do this?',
+    choices: [
+      { name: `signal     : ${signal}` },
+      { name: `frequency  : ${frequency}` },
+      { name: `samplerate : ${samplerate}` },
+      { name: `gain       : ${gain}` },
+      { name: `amplitude  : ${amplitude}` },
+      { name: '*** CONFIRM ***', value: true }
+    ]
+  })
+
+  if (!confirmed) return console.warn('Failed to confirm. Aborting.')
+
+  console.warn('Transmitting signal...')
+  const { execa } = await import('execa')
+  
+  const optionalArgs = []
+  if (amplitude) optionalArgs.push(`--amplitude=${amplitude}`)
+  if (gain) {
+    optionalArgs.push('-g')
+    optionalArgs.push(gain)
+  }
+
+  // const echoProcess = execa('echo')
+  // echoProcess.pipeStdout(process.stdout)
+  // echoProcess.stdin.write('test')
+  // return await echoProcess
+
+  const siggenProcess = execa('osmocom_siggen_nogui', [
+    ...optionalArgs,
+    '-a', 'hackrf',
+    '-f', frequency,
+    '-s', samplerate,
+    '-x', options.rfsignalWaveform1Frequency,
+    '-y', options.rfsignalWaveform2Frequency,
+    `--${signal}`
+  ]).pipeStdout(process.stdout)
+    .pipeStdout(process.stderr)
+
+  process.on('SIGTERM', () => {
+    siggenProcess.stdin.write('\r\n')
+    setTimeout(() => {
+      siggenProcess.kill('SIGTERM', { forceKillAfterTimeout: 1000 })
+    }, 1000)
+  })
+
+  await siggenProcess
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}
