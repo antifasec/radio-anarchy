@@ -85,11 +85,14 @@ module.exports = async (options = {}) => {
   ]).pipeStdout(process.stdout)
     .pipeStdout(process.stderr)
 
+  process.stdin.pipe(siggenProcess.stdin)
+  
   process.on('SIGINT', async () => {
-    siggenProcess.kill('SIGTERM', { forceKillAfterSeconds: 500 })
+    siggenProcess.stdin.write('\x13\x00')
   })
 
-  await siggenProcess
+  try { await siggenProcess }
+  catch (e) { /* no-op */ }
 }
 
 if (require.main === module) {
