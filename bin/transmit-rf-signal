@@ -16,7 +16,7 @@ program
   .option('--rfsignal-waveform2-frequency <frequency>', 'Signal waveform2 frequency', '10')
   .option('--rfsignal-samplerate <sample rate>', 'Signal sample rate')
   .option('--rfsignal-gain <gain>', 'Set gain in dB (default is midpoint)')
-  .option('--rfsignal-amplitude <amplitude>', 'Set output amplitude to AMPL (0.1-1.0) [default=0.3]')
+  .option('--rfsignal-amplitude <amplitude>', 'Set output amplitude to AMPL (0.1-1.0)')
   .option('--rfsignal-confirm', 'Don\'t ask for confirmation before transmitting', false)
 
 module.exports = async (options = {}) => {
@@ -38,8 +38,9 @@ module.exports = async (options = {}) => {
     message: resolveOption('--rfsignal-gain').description
   })
 
-  const amplitude = options.rfsignalGain || await input({
-    message: resolveOption('--rfsignal-amplitude').description
+  const amplitude = options.rfsignalAmplitude || await input({
+    message: resolveOption('--rfsignal-amplitude').description,
+    default: 1
   })
 
   const signal = options.rfsignalSignal || await select({
@@ -66,18 +67,12 @@ module.exports = async (options = {}) => {
 
   console.warn('Transmitting signal...')
   const { execa } = await import('execa')
-  
   const optionalArgs = []
   if (amplitude) optionalArgs.push(`--amplitude=${amplitude}`)
   if (gain) {
     optionalArgs.push('-g')
     optionalArgs.push(gain)
   }
-
-  // const echoProcess = execa('echo')
-  // echoProcess.pipeStdout(process.stdout)
-  // echoProcess.stdin.write('test')
-  // return await echoProcess
 
   const siggenProcess = execa('osmocom_siggen_nogui', [
     ...optionalArgs,
@@ -90,11 +85,8 @@ module.exports = async (options = {}) => {
   ]).pipeStdout(process.stdout)
     .pipeStdout(process.stderr)
 
-  process.on('SIGTERM', () => {
-    siggenProcess.stdin.write('\r\n')
-    setTimeout(() => {
-      siggenProcess.kill('SIGTERM', { forceKillAfterTimeout: 1000 })
-    }, 1000)
+  process.on('SIGINT', async () => {
+    siggenProcess.kill('SIGTERM', { forceKillAfterSeconds: 500 })
   })
 
   await siggenProcess

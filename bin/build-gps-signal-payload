@@ -61,8 +61,8 @@ module.exports = async (options = {}) => {
     return await select({ message: 'Select ephemeris file', choices: ephemerisChoices })
   })()
 
-  const latitude = options.latitude || await input({ message: 'Latitude to simulate', default: '37.82039916850053' })
-  const longitude = options.longitude || await input({ message: 'Longitude to simulate', default: '-122.47826400437096' })
+  const latitude = options.latitude || await input({ message: 'Latitude to simulate', default: '37.820399' })
+  const longitude = options.longitude || await input({ message: 'Longitude to simulate', default: '-122.478264' })
   const altitude = options.altitude || await input({ message: 'Altitude to simulate', default: '100' })
   const duration = options.gpssimDuration ||  await input({ message: 'Signal duration', default: 600 })
   const payloadFilename = `${path.basename(ephemeris)}_${latitude}_${longitude}_${altitude}.bin`
@@ -74,7 +74,7 @@ module.exports = async (options = {}) => {
     '-b', options.gpssimIqBits,
     '-d', duration,
     '-e', ephemeris,
-    '-t', moment.utc().format('YYYY/MM/DD,hh:mm:ss'),
+    '-t', moment().format('YYYY/MM/DD,hh:mm:ss'),
     '-l', `${latitude},${longitude},${altitude}`,
     '-o', path.resolve(options.gpssimOutput, payloadFilename)
   ]).pipeStdout(process.stdout)
