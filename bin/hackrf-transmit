@@ -8,6 +8,7 @@ const { program } = require('commander')
 const { input, select } = require('@inquirer/prompts')
 
 const resolveFiles = require('../lib/resolveFiles')
+const resolveOption = require('../lib/resolveOption')
 const { PAYLOADS_DIRECTORY, BIN_MATCHER } = require('../lib/constants')
 
 program
@@ -33,21 +34,33 @@ module.exports = async (options = {}) => {
   const payload = await (async () => {
     if (payloadFiles.length === 1) return payloadFiles[0]
     const payloadChoices = payloadFiles.map(name => ({ name, value: path.resolve(name) }))
-    return await select({ message: 'Select payload', choices: payloadChoices })
+    return await select({
+      message: resolveOption('--hrftx-payload').description,
+      choices: payloadChoices
+    })
   })()
 
-  const frequency = options.hrftxFrequency
-    || await input({ message: 'Frequency', default: 462562500 })
+  const frequency = options.hrftxFrequency || await input({
+    message: resolveOption('--hrftx-frequency').description,
+    default: 462562500
+  })
 
-  const samplerate = options.hrftxSamplerate
-    || await input({ message: 'Sample Rate', default: 2600000 })
+  const samplerate = options.hrftxSamplerate || await input({
+    message: resolveOption('--hrftx-samplerate').description,
+    default: 2600000
+  })
 
-  const gain = options.hrftxGain
-    || await input({ message: 'Gain', default: 24 })
+  const gain = options.hrftxGain || await input({
+    message: resolveOption('--hrftx-gain').description,
+    default: 24
+  })
 
   const amplifyInput = options.hrftxAmplify ? '1' : undefined
-  const amplifyChoices = [{ name: 'Enabled', value: '1' }, { name: 'Disabled', value: '0' }]
-  const amplify = amplifyInput || await select({ message: 'Enable amplification', default: '1', choices: amplifyChoices })
+  const amplify = amplifyInput || await select({
+    message: resolveOption('--hrftx-amplify').description,
+    default: '1',
+    choices: [{ name: 'Enabled', value: '1' }, { name: 'Disabled', value: '0' }]
+  })
 
   const finalWarningChoices = [
     { name: `payload    : ${payload}` },
@@ -62,13 +75,11 @@ module.exports = async (options = {}) => {
     choices: finalWarningChoices
   })
   
-  if (!confirmed) {
-    return console.warn('Failed to confirm. Aborting.')
-  }
+  if (!confirmed) return console.warn('Failed to confirm. Aborting.')
 
   console.info('Transmitting signal...')
   const { execa } = await import('execa')
-  await execa('hackrf_transfer', [
+  const transmitProcess = execa('hackrf_transfer', [
     '-t', payload,
     '-f', frequency,
     '-s', samplerate,
@@ -76,6 +87,10 @@ module.exports = async (options = {}) => {
     '-a', amplify
   ]).pipeStdout(process.stdout)
     .pipeStderr(process.stderr)
+  
+  process.stdin.pipe(transmitProcess.stdin)
+
+  return await transmitProcess
 }
 
 if (require.main === module) {

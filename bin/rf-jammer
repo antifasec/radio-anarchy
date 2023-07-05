@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
+const defaults = require('lodash/defaults')
 const { program } = require('commander')
 const { select, input } = require('@inquirer/prompts')
 
+const resolveOption = require('../lib/resolveOption')
 const { COMMON_RF_CONFIGURATIONS } = require('../lib/constants')
 
 program
@@ -19,15 +21,19 @@ const frequencyOptions = [
 ]
 
 module.exports = async (options = {}) => {
-  const { frequency, samplerate } = await select({
-    message: 'Use a common frequency',
+  const { frequency, samplerate } = COMMON_RF_CONFIGURATIONS[options.common] || await select({
+    message: resolveOption('--common').description,
     choices: frequencyOptions
   })
 
-  await transmitRfSignal({
+  const transmitProcess = transmitRfSignal(defaults(options, {
     rfsignalFrequency: frequency,
     rfsignalSamplerate: samplerate
-  })
+  }))
+
+  process.stdin.pipe(transmitProcess.stdin)
+
+  return await transmitProcess
 }
 
 if (require.main === module) {

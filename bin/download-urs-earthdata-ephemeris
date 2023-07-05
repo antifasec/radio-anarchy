@@ -9,6 +9,7 @@ const { mkdirp } = require('mkdirp')
 const { program } = require('commander')
 const { password } = require('@inquirer/prompts')
 
+const resolveOption = require('../lib/resolveOption')
 const {
   BUILD_DIRECTORY,
   BRDC_GZIP_FILE_MATCHER
@@ -19,14 +20,20 @@ program
   .option('--earthdata-user <username>', 'urs.earthdata.nasa.gov username')
   .option('--earthdata-pass <password>', 'urs.earthdata.nasa.gov password')
 
-module.exports = async (options = {}) => {
-  const user = options.earthdataUser || await password({ message: 'urs.earthdata.nasa.gov username' })
-  const pass = options.earthdataPass || await password({ message: 'urs.earthdata.nasa.gov password' })
 
+module.exports = async (options = {}) => {
   const now = moment()
   const doy = now.dayOfYear()
   const year = now.year()
   const brdcRoot = `https://cddis.nasa.gov/archive/gnss/data/daily/${year}/brdc`
+  
+  const user = options.earthdataUser || await password({
+    message: resolveOption('--earthdata-user').description
+  })
+
+  const pass = options.earthdataPass || await password({
+    message: resolveOption('--earthdata-pass').description
+  })
 
   const browser = await puppeteer.launch({ headless: 'new' })
   const page = await browser.newPage()

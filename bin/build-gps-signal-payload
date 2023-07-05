@@ -9,6 +9,7 @@ const { program } = require('commander')
 const { confirm, input, select } = require('@inquirer/prompts')
 
 const resolveFiles = require('../lib/resolveFiles')
+const resolveOption = require('../lib/resolveOption')
 const { BUILD_DIRECTORY, PAYLOADS_DIRECTORY, BRDC_FILE_MATCHER } = require('../lib/constants')
 
 program
@@ -40,8 +41,10 @@ module.exports = async (options = {}) => {
   const binaryExists = checkGpsSdrSimBinary(options.gpssimBinary)
   if (binaryExists) console.info('gps-sdr-sim binary found')
   if (!binaryExists || options.gpssimDownloadCompile) {
-    const compile = options.gpssimDownloadCompile
-      || await confirm({ message: 'Download and compile gps-sdr-sim now', default: !binaryExists })
+    const compile = options.gpssimDownloadCompile || await confirm({
+      message: resolveOption('--gpssim-download-compile').description,
+      default: !binaryExists
+    })
     if (compile) await compileGpsSdrSim(options)
   }
 
@@ -50,24 +53,44 @@ module.exports = async (options = {}) => {
   }
   
   const ephemerisFiles = await resolveEphemerisFiles(options.gpssimEphemeris)
-  const downloadEphemeris = options.gpssimDownloadEphemeris
-    || await confirm({ message: 'Download new ephemeris data now', default: !ephemerisFiles.length })
+  const downloadEphemeris = options.gpssimDownloadEphemeris || await confirm({
+    message: resolveOption('--gpssim-download-ephemeris').description,
+    default: !ephemerisFiles.length
+  })
   if (downloadEphemeris) await downloadUrsEarthdataEphemeris(options)
 
   const ephemeris = await (async () => {
     const ephemerisFiles = await resolveEphemerisFiles(options.gpssimEphemeris)
     if (ephemerisFiles.length === 1) return ephemerisFiles[0]
     const ephemerisChoices = ephemerisFiles.map(name => ({ name, value: path.resolve(name) }))
-    return await select({ message: 'Select ephemeris file', choices: ephemerisChoices })
+    return await select({
+      message: resolveOption('--gpssim-ephemeris').description,
+      choices: ephemerisChoices
+    })
   })()
 
-  const latitude = options.latitude || await input({ message: 'Latitude to simulate', default: '37.820399' })
-  const longitude = options.longitude || await input({ message: 'Longitude to simulate', default: '-122.478264' })
-  const altitude = options.altitude || await input({ message: 'Altitude to simulate', default: '100' })
-  const duration = options.gpssimDuration ||  await input({ message: 'Signal duration', default: 600 })
-  const payloadFilename = `${path.basename(ephemeris)}_${latitude}_${longitude}_${altitude}.bin`
+  const latitude = options.latitude || await input({
+    message: resolveOption('--gpssim-latitude').description,
+    default: '37.820399'
+  })
 
-  console.info(ephemeris, 'compiling...')
+  const longitude = options.longitude || await input({
+    message: resolveOption('--gpssim-longitude').description,
+    default: '-122.478264'
+  })
+  
+  const altitude = options.altitude || await input({
+    message: resolveOption('--gpssim-altitude').description,
+    default: '100'
+  })
+
+  const duration = options.gpssimDuration || await input({
+    message: resolveOption('--gpssim-duration').description,
+    default: 600
+  })
+
+  const payloadFilename = `${path.basename(ephemeris)}_${latitude}_${longitude}_${altitude}.bin`
+  console.info(payloadFilename, 'compiling...')
   await mkdirp(options.gpssimOutput)
   const { execa } = await import('execa')
   await execa(options.gpssimBinary, [
