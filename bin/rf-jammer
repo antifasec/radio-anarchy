@@ -26,14 +26,10 @@ module.exports = async (options = {}) => {
     choices: frequencyOptions
   })
 
-  const transmitProcess = transmitRfSignal(defaults(options, {
+  await transmitRfSignal(defaults(options, {
     rfsignalFrequency: frequency,
     rfsignalSamplerate: samplerate
   }))
-
-  process.stdin.pipe(transmitProcess.stdin)
-
-  return await transmitProcess
 }
 
 if (require.main === module) {

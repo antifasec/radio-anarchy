@@ -7,7 +7,6 @@ const { program } = require('commander')
 const { confirm } = require('@inquirer/prompts')
 
 const resolveFiles = require('../lib/resolveFiles')
-const resolveOption = require('../lib/resolveOption')
 const { PAYLOADS_DIRECTORY } = require('../lib/constants')
 
 program
