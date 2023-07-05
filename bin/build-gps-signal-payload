@@ -4,9 +4,6 @@ const fs = require('fs')
 const path = require('path')
 const moment = require('moment')
 
-const compileGpsSdrSim = require('./compile-gps-sdr-sim')
-const downloadUrsEarthdataEphemeris = require('./download-urs-earthdata-ephemeris')
-
 const { mkdirp } = require('mkdirp')
 const { program } = require('commander')
 const { confirm, input, select } = require('@inquirer/prompts')
@@ -25,6 +22,9 @@ program
   .option('--gpssim-latitude <latitude>', 'Latitude to simulate')
   .option('--gpssim-longitude <longitude>', 'Longitude to simulate')
   .option('--gpssim-altitude <altitude>', 'Altitude to simulate')
+
+const compileGpsSdrSim = require('./compile-gps-sdr-sim')
+const downloadUrsEarthdataEphemeris = require('./download-urs-earthdata-ephemeris')
 
 const resolveEphemerisFiles = ephemeris => {
   return resolveFiles(ephemeris)

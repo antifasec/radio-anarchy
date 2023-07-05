@@ -6,14 +6,14 @@ const path = require('path')
 const { program } = require('commander')
 const { confirm } = require('@inquirer/prompts')
 
-const hackrfTransmit = require('./hackrf-transmit')
-const buildGpsSignalPayload = require('./build-gps-signal-payload')
-
 const resolveFiles = require('../lib/resolveFiles')
 const { PAYLOADS_DIRECTORY } = require('../lib/constants')
 
 program
   .option('-p, --payload <file or path>', 'Payload, or payload directory', PAYLOADS_DIRECTORY)
+
+const hackrfTransmit = require('./hackrf-transmit')
+const buildGpsSignalPayload = require('./build-gps-signal-payload')
 
 module.exports = async (options = {}) => {
   const payloadFiles = await resolveFiles(options.payload)

@@ -12,8 +12,8 @@ const signalChoices = signals.map(name => ({ name, value: name }))
 program
   .option(`--rfsignal-signal <${signals.join('|')}>`, 'Signal to transmit')
   .option('--rfsignal-frequency <frequency>', 'Signal frequency')
-  .option('--rfsignal-waveform1-frequency <frequency>', 'Signal waveform frequency', '2e6')
-  .option('--rfsignal-waveform2-frequency <frequency>', 'Signal waveform2 frequency', '10')
+  .option('--rfsignal-waveform1-frequency <frequency>', 'Signal waveform frequency')
+  .option('--rfsignal-waveform2-frequency <frequency>', 'Signal waveform2 frequency')
   .option('--rfsignal-samplerate <sample rate>', 'Signal sample rate')
   .option('--rfsignal-gain <gain>', 'Set gain in dB (default is midpoint)')
   .option('--rfsignal-amplitude <amplitude>', 'Set output amplitude to AMPL (0.1-1.0)')
@@ -65,28 +65,36 @@ module.exports = async (options = {}) => {
 
   if (!confirmed) return console.warn('Failed to confirm. Aborting.')
 
-  console.warn('Transmitting signal...')
-  const { execa } = await import('execa')
   const optionalArgs = []
   if (amplitude) optionalArgs.push(`--amplitude=${amplitude}`)
+
   if (gain) {
     optionalArgs.push('-g')
     optionalArgs.push(gain)
   }
+  
+  if (options.rfsignalWaveform1Frequency) {
+    optionalArgs.push('-x')
+    optionalArgs.push(options.rfsignalWaveform1Frequency)
+  }
 
+  if (options.rfsignalWaveform2Frequency) {
+    optionalArgs.push('-y')
+    optionalArgs.push(options.rfsignalWaveform2Frequency)
+  }
+
+  console.warn('Transmitting signal...')
+  const { execa } = await import('execa')
   const siggenProcess = execa('osmocom_siggen_nogui', [
     ...optionalArgs,
     '-a', 'hackrf',
     '-f', frequency,
     '-s', samplerate,
-    '-x', options.rfsignalWaveform1Frequency,
-    '-y', options.rfsignalWaveform2Frequency,
     `--${signal}`
   ]).pipeStdout(process.stdout)
     .pipeStdout(process.stderr)
 
   process.stdin.pipe(siggenProcess.stdin)
-  
   process.on('SIGINT', async () => {
     siggenProcess.stdin.write('\x13\x00')
   })
