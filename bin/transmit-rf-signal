@@ -88,11 +88,13 @@ module.exports = async (options = {}) => {
   const { execa } = await import('execa')
   const siggenProcess = execa('osmocom_siggen_nogui', [
     ...optionalArgs,
+    '-s', samplerate,
     '-a', 'hackrf',
     '-f', frequency,
-    '-s', samplerate,
     `--${signal}`
-  ]).pipeStdout(process.stdout)
+  ], {
+    shell: true
+  }).pipeStdout(process.stdout)
     .pipeStdout(process.stderr)
 
   process.stdin.pipe(siggenProcess.stdin)
