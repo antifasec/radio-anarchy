@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+
+const path = require('path')
+const axios = require('axios')
+const hasbin = require('hasbin')
+const decompress = require('decompress')
+
+const { mkdirp } = require('mkdirp')
+const { program } = require('commander')
+
+const { BUILD_DIRECTORY } = require('../lib/constants')
+
+program
+  .description([ program._description, 'Download and compile dump1090' ].join('\n'))
+  .option('--dump1090-build-path <directory>', 'Build path for dump1090', BUILD_DIRECTORY)
+  // .summary('Dependencies: librtlsdr0 librtlsdr-dev libhackrf-dev libairspy-dev libsoxr-dev')
+
+module.exports = async (options = {}) => {
+  if (!hasbin.sync('make')) return console.error('make not found in PATH')
+
+  console.info('Downloading dump1090...')
+  const { data } = await axios.request({
+    url: 'https://github.com/antirez/dump1090/archive/refs/heads/master.zip',
+    responseType: 'arraybuffer'
+  })
+  
+  console.info('Extracting dump1090...')
+  await mkdirp(options.dump1090BuildPath)
+  await decompress(data, options.dump1090BuildPath)
+
+  console.info('Compiling dump1090...')
+  const { execa } = await import('execa')
+  await execa('make', ['NoSDRplay=1'], {
+    cwd: path.resolve(options.dump1090BuildPath, 'dump1090-master')
+  }).pipeStdout(process.stdout)
+    .pipeStderr(process.stderr)
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}

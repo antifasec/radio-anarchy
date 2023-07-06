@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const path = require('path')
+
+const { program } = require('commander')
+const { confirm } = require('@inquirer/prompts')
+
+const resolveOption = require('../lib/resolveOption')
+const { BUILD_DIRECTORY, PAYLOADS_DIRECTORY, BRDC_FILE_MATCHER } = require('../lib/constants')
+
+program
+  .description([ program._description, 'Decode and view ADS-B flight data' ].join('\n'))
+  .option('--dump1090-download-compile', 'Download & compile dump1090')
+  .option('--dump1090-binary <file>', 'Path to dump1090 binary', path.join(BUILD_DIRECTORY, 'dump1090-master', 'dump1090'))
+
+const compileDump1090 = require('./compile-dump1090')
+const downloadUrsEarthdataEphemeris = require('./download-urs-earthdata-ephemeris')
+
+const checkDump1090Binary = binary => {
+  try { return fs.lstatSync(binary).isFile() }
+  catch (e) { return false }
+}
+
+module.exports = async (options = {}) => {
+  const binaryExists = checkDump1090Binary(options.dump1090Binary)
+  if (binaryExists) console.info('dump1090 binary found')
+  if (!binaryExists || options.dump1090DownloadCompile) {
+    const compile = options.dump1090DownloadCompile || await confirm({
+      message: resolveOption('--dump1090-download-compile').description,
+      default: !binaryExists
+    })
+    if (compile) await compileDump1090(options)
+  }
+
+  if (!checkDump1090Binary(options.dump1090Binary)) {
+    return console.error('No dump1090 found. Aborting.')
+  }
+
+  setTimeout(async () => {
+    const open = await import('open')
+    await open.default('http://localhost:8080/')
+  }, 2000)
+
+  const { execa } = await import('execa')
+  const dump1090Process = execa(options.dump1090Binary, ['--interactive', '--net'], {
+    cwd: path.dirname(options.dump1090Binary)
+  }).pipeStdout(process.stdout)
+    .pipeStderr(process.stderr)
+  
+  process.stdin.pipe(dump1090Process.stdin)
+  
+  return await dump1090Process
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}

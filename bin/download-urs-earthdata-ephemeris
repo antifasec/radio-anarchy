@@ -16,6 +16,7 @@ const {
 } = require('../lib/constants')
 
 program
+  .description([ program._description, 'Download GPS ephemeris data from cddis.nasa.gov' ].join('\n'))
   .option('--earthdata-path <directory>', 'Directory to download brdc data', BUILD_DIRECTORY)
   .option('--earthdata-user <username>', 'urs.earthdata.nasa.gov username')
   .option('--earthdata-pass <password>', 'urs.earthdata.nasa.gov password')

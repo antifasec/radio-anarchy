@@ -8,6 +8,7 @@ const resolveOption = require('../lib/resolveOption')
 const { COMMON_RF_CONFIGURATIONS } = require('../lib/constants')
 
 program
+  .description([ program._description, 'Transmit a jamming signal' ].join('\n'))
   .option(`-c, --common <${Object.keys(COMMON_RF_CONFIGURATIONS).join('|')}>`, 'Use a common radio channel/configuration')
 
 const transmitRfSignal = require('./transmit-rf-signal')

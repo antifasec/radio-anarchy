@@ -12,6 +12,7 @@ const resolveOption = require('../lib/resolveOption')
 const { PAYLOADS_DIRECTORY, BIN_MATCHER } = require('../lib/constants')
 
 program
+  .description([ program._description, 'Transmit a signal using hackrf' ].join('\n'))
   .option('--hrftx-payload <file or path>', 'Payload to transmit', PAYLOADS_DIRECTORY)
   .option('--hrftx-frequency <frequency>', 'Transmit frequency')
   .option('--hrftx-samplerate <sample rate>', 'Transmit sample rate')

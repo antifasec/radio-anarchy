@@ -11,6 +11,7 @@ const { program } = require('commander')
 const { BUILD_DIRECTORY } = require('../lib/constants')
 
 program
+  .description([ program._description, 'Download & compile gps-sdr-sim' ].join('\n'))
   .option('--gpssim-build-path <directory>', 'Build path for gps-sdr-sim', BUILD_DIRECTORY)
 
 module.exports = async (options = {}) => {

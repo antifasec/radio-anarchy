@@ -10,6 +10,7 @@ const signals = [ 'gaussian', 'sine', 'const', 'gaussian', 'uniform', '2tone', '
 const signalChoices = signals.map(name => ({ name, value: name }))
 
 program
+  .description([ program._description, 'Transmit a generated rf signal' ].join('\n'))
   .option(`--rfsignal-signal <${signals.join('|')}>`, 'Signal to transmit')
   .option('--rfsignal-frequency <frequency>', 'Signal frequency')
   .option('--rfsignal-waveform1-frequency <frequency>', 'Signal waveform frequency')

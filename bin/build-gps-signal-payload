@@ -13,6 +13,7 @@ const resolveOption = require('../lib/resolveOption')
 const { BUILD_DIRECTORY, PAYLOADS_DIRECTORY, BRDC_FILE_MATCHER } = require('../lib/constants')
 
 program
+  .description([ program._description, 'Build GPS satellite signals for spoofing' ].join('\n'))
   .option('--gpssim-download-compile', 'Download & compile gps-sdr-sim')
   .option('--gpssim-download-ephemeris', 'Download & build ephemeris data')
   .option('--gpssim-binary <file>', 'Path to gps-sdr-sim binary', path.join(BUILD_DIRECTORY, 'gps-sdr-sim-master', 'gps-sdr-sim'))

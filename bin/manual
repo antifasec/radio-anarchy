@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const path = require('path')
+
+const binDir = path.resolve(__dirname, '..', 'bin')
+
+;(async () => {
+  const { execa } = await import('execa')
+
+  const binDirFiles = fs.readdirSync(__dirname, {
+    withFileTypes: true
+  }).filter(f => {
+    if (!f.isFile()) return false
+
+    const binFile = path.resolve(binDir, f.name)
+    if (binFile === require.main.filename) return false
+    try { fs.accessSync(binFile, fs.constants.X_OK) }
+    catch (e) { return false }
+    
+    return true
+  })
+  
+  const binHelp = await Promise.all(binDirFiles.map(async f => {
+    const binFile = path.resolve(binDir, f.name)
+    const { stdout } = await execa(binFile, ['--help', '--nobanner'])
+    return { name: binFile, help: stdout }
+  }))
+  
+  binHelp.forEach(({ name, help }) => {
+    process.stdout.write(`# ${name}\n`)
+    process.stdout.write(`\`\`\`\n${help}\n\`\`\`\n\n`)
+  })
+})()
