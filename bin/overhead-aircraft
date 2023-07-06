@@ -15,7 +15,6 @@ program
   .option('--dump1090-binary <file>', 'Path to dump1090 binary', path.join(BUILD_DIRECTORY, 'dump1090-master', 'dump1090'))
 
 const compileDump1090 = require('./compile-dump1090')
-const downloadUrsEarthdataEphemeris = require('./download-urs-earthdata-ephemeris')
 
 const checkDump1090Binary = binary => {
   try { return fs.lstatSync(binary).isFile() }
