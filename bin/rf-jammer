@@ -5,11 +5,12 @@ const { program } = require('commander')
 const { select, input } = require('@inquirer/prompts')
 
 const resolveOption = require('../lib/resolveOption')
-const { COMMON_RF_CONFIGURATIONS } = require('../lib/constants')
+const { COMMON_RF_CONFIGURATIONS, commonRfConfigurationsHelp } = require('../lib/constants')
 
 program
   .description([ program._description, 'Transmit a jamming signal' ].join('\n'))
-  .option(`-c, --common <${Object.keys(COMMON_RF_CONFIGURATIONS).join('|')}>`, 'Use a common radio channel/configuration')
+  .option(`-c, --common <configuration name>`, 'Use a common radio channel/configuration')
+  .option('--list-common-frequencies', 'Show a list of preconfigured common frequencies, then exit', false)
 
 const transmitRfSignal = require('./transmit-rf-signal')
 
@@ -22,6 +23,10 @@ const frequencyOptions = [
 ]
 
 module.exports = async (options = {}) => {
+  if (options.listCommonFrequencies) {
+    return process.stdout.write(`${commonRfConfigurationsHelp()}\n\x00`)
+  }
+
   const { frequency, samplerate } = COMMON_RF_CONFIGURATIONS[options.common] || await select({
     message: resolveOption('--common').description,
     choices: frequencyOptions
