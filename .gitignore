@@ -1,3 +1,4 @@
 /build
 /payloads
 /node_modules
+/grc/*.py
