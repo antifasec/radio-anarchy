@@ -466,7 +466,7 @@ blocks:
     interp: '5'
     maxoutbuf: '0'
     minoutbuf: '0'
-    taps: '[]'
+    taps: ''
     type: ccc
   states:
     bus_sink: false
