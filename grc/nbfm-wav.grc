@@ -122,27 +122,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [248, 180.0]
-    rotation: 0
-    state: enabled
-- name: analog_wfm_tx_0
-  id: analog_wfm_tx
-  parameters:
-    affinity: ''
-    alias: ''
-    audio_rate: samp_rate
-    comment: ''
-    fh: '-1.0'
-    max_dev: bandwidth
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    quad_rate: quad_rate
-    tau: 75e-6
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [248, 308.0]
+    coordinate: [184, 244.0]
     rotation: 0
     state: enabled
 - name: bandwidth
@@ -160,29 +140,6 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [424, 12.0]
-    rotation: 0
-    state: true
-- name: blocks_selector_0
-  id: blocks_selector
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    enabled: 'True'
-    input_index: mod
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '2'
-    num_outputs: '1'
-    output_index: '0'
-    showports: 'True'
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [568, 244.0]
     rotation: 0
     state: true
 - name: blocks_wavfile_source_0
@@ -235,23 +192,6 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [280, 12.0]
-    rotation: 0
-    state: true
-- name: mod
-  id: parameter
-  parameters:
-    alias: ''
-    comment: ''
-    hide: none
-    label: Modulation [0=NBFM,1=WBFM]
-    short_id: ''
-    type: intx
-    value: '0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [536, 12.0]
     rotation: 0
     state: true
 - name: osmosdr_sink_0
@@ -512,7 +452,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1008, 196.0]
+    coordinate: [680, 196.0]
     rotation: 0
     state: enabled
 - name: rational_resampler_xxx_0
@@ -532,16 +472,13 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [768, 252.0]
+    coordinate: [448, 252.0]
     rotation: 0
     state: enabled
 
 connections:
-- [analog_nbfm_tx_0, '0', blocks_selector_0, '0']
-- [analog_wfm_tx_0, '0', blocks_selector_0, '1']
-- [blocks_selector_0, '0', rational_resampler_xxx_0, '0']
+- [analog_nbfm_tx_0, '0', rational_resampler_xxx_0, '0']
 - [blocks_wavfile_source_0, '0', analog_nbfm_tx_0, '0']
-- [blocks_wavfile_source_0, '0', analog_wfm_tx_0, '0']
 - [rational_resampler_xxx_0, '0', osmosdr_sink_0, '0']
 
 metadata:
