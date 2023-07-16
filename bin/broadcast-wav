@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const path = require('path')
+const { program } = require('commander')
+const { confirm, input, select } = require('@inquirer/prompts')
+
+const resolveFiles = require('../lib/resolveFiles')
+const resolveOption = require('../lib/resolveOption')
+
+program
+  .description([ program._description, 'Broadcast a .wav file' ].join('\n'))
+  .option('-f, --file <wav file>', 'Wav file to broadcast')
+  .option('-m, --modulation <nbfm|wbfm>', 'Which modulation to use', 'nbfm')
+  .option('-g, --gain <1-48>', 'Gain', 47)
+
+const commonFrequencies = require('./common-frequencies')
+const compileGrcScripts = require('./compile-grc-scripts')
+
+module.exports = async (options = {}) => {
+  const buildPath = path.join(options.grccBuildPath, 'grc')
+
+  const buildPathExists = (() => {
+    try { return fs.existsSync(buildPath) }
+    catch (e) { return false }
+  })()
+
+  if (await confirm({ message: 'Compile/recompile grc scripts now', default: !buildPathExists })) {
+    await compileGrcScripts(options)
+  }
+
+  const { frequency, samplerate } = await commonFrequencies(options)
+  const grcBuildFiles = await resolveFiles(buildPath)
+  const wavGrcFiles = grcBuildFiles.filter(filename => filename.endsWith('_wav.py'))
+  const wavGrcChoices = wavGrcFiles.map(filename => ({ name: path.basename(filename), value: filename }))
+  const grcBinary = await select({ message: resolveOption('--modulation').description, choices: wavGrcChoices, default: wavGrcChoices[0] })
+  const wavFile = options.file || await input({ message: resolveOption('--file').description })
+
+  console.warn(wavFile, 'transmitting...')
+  const { execa } = await import('execa')
+  const grcProcess = execa(grcBinary, [
+    '--file', wavFile,
+    '--freq', frequency,
+    '--bandwidth', samplerate,
+    '--gain', options.gain
+  ], {
+    shell: true
+  })
+  
+  grcProcess.pipeStdout(process.stdout)
+  grcProcess.pipeStdout(process.stderr)
+
+  process.stdin.pipe(grcProcess.stdin)
+  process.on('SIGINT', async () => grcProcess.stdin.write('\x13\x00'))
+
+  try { await grcProcess }
+  catch (e) { console.error(e.message) }
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}

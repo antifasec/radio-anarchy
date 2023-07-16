@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+
+const path = require('path')
+const hasbin = require('hasbin')
+
+const { mkdirp } = require('mkdirp')
+const { program } = require('commander')
+
+const { BUILD_DIRECTORY, GRC_DIRECTORY } = require('../lib/constants')
+const resolveFiles = require('../lib/resolveFiles')
+
+program
+  .description([ program._description, 'Compile gnuradio scripts' ].join('\n'))
+  .option('--grcc-build-path <directory>', 'Build path for gnuradio scripts', BUILD_DIRECTORY)
+  .option('--grcc-source-path <directory>', 'Source path for gnuradio scripts', GRC_DIRECTORY)
+
+module.exports = async (options = {}) => {
+  if (!hasbin.sync('grcc')) return console.error('grcc not found in PATH')
+  console.info('Compiling grc scripts...')
+  const buildPath = path.join(options.grccBuildPath, 'grc')
+  await mkdirp(buildPath)
+  const { execa } = await import('execa')
+  const grcSourceFiles = await resolveFiles(options.grccSourcePath)
+  const grcFiles = grcSourceFiles.filter(filename => filename.endsWith('.grc'))
+  await Promise.all(grcFiles.map(async grcFile => {
+    await execa('grcc', [grcFile, '-o', path.join(buildPath)])
+      .pipeStdout(process.stdout)
+      .pipeStderr(process.stderr)
+  }))
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}

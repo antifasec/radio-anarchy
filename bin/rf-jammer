@@ -2,36 +2,16 @@
 
 const defaults = require('lodash/defaults')
 const { program } = require('commander')
-const { select, input } = require('@inquirer/prompts')
 
-const resolveOption = require('../lib/resolveOption')
-const { COMMON_RF_CONFIGURATIONS, commonRfConfigurationsHelp } = require('../lib/constants')
+const commonFrequencies = require('./common-frequencies')
 
 program
   .description([ program._description, 'Transmit a jamming signal' ].join('\n'))
-  .option(`-c, --common <configuration name>`, 'Use a common radio channel/configuration')
-  .option('--list-common-frequencies', 'Show a list of preconfigured common frequencies, then exit', false)
 
 const transmitRfSignal = require('./transmit-rf-signal')
 
-const commonFrequencyOptions = Object.values(COMMON_RF_CONFIGURATIONS)
-  .map(value => ({ name: value.label, value }))
-
-const frequencyOptions = [
-  ...commonFrequencyOptions,
-  { name: 'Other (specify)', value: {} }
-]
-
 module.exports = async (options = {}) => {
-  if (options.listCommonFrequencies) {
-    return process.stdout.write(`${commonRfConfigurationsHelp()}\n\x00`)
-  }
-
-  const { frequency, samplerate } = COMMON_RF_CONFIGURATIONS[options.common] || await select({
-    message: resolveOption('--common').description,
-    choices: frequencyOptions
-  })
-
+  const { frequency, samplerate } = await commonFrequencies(options)
   await transmitRfSignal(defaults(options, {
     rfsignalFrequency: frequency,
     rfsignalSamplerate: samplerate

@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+
+const defaults = require('lodash/defaults')
+const { program } = require('commander')
+const { select, input } = require('@inquirer/prompts')
+
+const resolveOption = require('../lib/resolveOption')
+const { COMMON_RF_CONFIGURATIONS, commonRfConfigurationsHelp } = require('../lib/constants')
+
+program
+  .option(`--common-frequency <configuration name>`, 'Use a common radio channel/configuration')
+  .option('--common-frequency-list', 'Show a list of preconfigured common frequencies, then exit', false)
+
+const commonFrequencyOptions = Object.values(COMMON_RF_CONFIGURATIONS)
+  .map(value => ({ name: value.label, value }))
+
+const frequencyOptions = [
+  ...commonFrequencyOptions,
+  { name: 'Other (specify)', value: {} }
+]
+
+module.exports = async (options = {}) => {
+  if (options.commonFrequencyList) {
+    return process.stdout.write(`${commonRfConfigurationsHelp()}\n\x00`)
+  }
+
+  return COMMON_RF_CONFIGURATIONS[options.common] || await select({
+    message: resolveOption('--common-frequency').description,
+    choices: frequencyOptions
+  })
+}
+
+if (require.main === module) {
+  require('../lib/banner')
+  module.exports(program.parse().opts())
+}
