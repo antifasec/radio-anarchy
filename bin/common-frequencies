@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const defaults = require('lodash/defaults')
+const isEmpty = require('lodash/isEmpty')
 const { program } = require('commander')
 const { select, input } = require('@inquirer/prompts')
 
@@ -24,10 +24,17 @@ module.exports = async (options = {}) => {
     return process.stdout.write(`${commonRfConfigurationsHelp()}\n\x00`)
   }
 
-  return COMMON_RF_CONFIGURATIONS[options.common] || await select({
+  const selection = COMMON_RF_CONFIGURATIONS[options.commonFrequency] || await select({
     message: resolveOption('--common-frequency').description,
     choices: frequencyOptions
   })
+
+  if (!isEmpty(selection)) return selection
+
+  const defaultOption = commonFrequencyOptions[0].value
+  const frequency = await input({ message: 'Manual frequency input', default: defaultOption.frequency })
+  const samplerate = await input({ message: 'Manual samplerate input', default: defaultOption.samplerate })
+  return { frequency, samplerate }
 }
 
 if (require.main === module) {
