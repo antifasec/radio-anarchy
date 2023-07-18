@@ -23,9 +23,13 @@ module.exports = async (options = {}) => {
   const grcSourceFiles = await resolveFiles(options.grccSourcePath)
   const grcFiles = grcSourceFiles.filter(filename => filename.endsWith('.grc'))
   await Promise.all(grcFiles.map(async grcFile => {
-    await execa('grcc', [grcFile, '-o', path.join(buildPath)])
-      .pipeStdout(process.stdout)
-      .pipeStderr(process.stderr)
+    try {
+      await execa('grcc', [grcFile, '-o', path.join(buildPath)])
+        .pipeStdout(process.stdout)
+        .pipeStderr(process.stderr)
+    } catch (e) {
+      console.error(e.message)
+    }
   }))
 }
 
