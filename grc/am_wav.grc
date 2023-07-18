@@ -1,7 +1,6 @@
 options:
   parameters:
     author: antifasec
-    catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
     comment: ''
@@ -41,9 +40,8 @@ blocks:
     cutoff_freq: 18e3
     gain: '2'
     samp_rate: samp_rate
-    value: ''
     width: '1000'
-    win: window.WIN_HAMMING
+    win: firdes.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
@@ -558,4 +556,3 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.1
